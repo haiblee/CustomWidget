@@ -11,7 +11,7 @@ import android.widget.TextView;
  * Created by haibiao on 2016/1/14 14:20.
  * email: lihaibiaowork@gmail.com<br/>
  */
-public class MarqueeTextView extends TextView {
+public class MarqueeTextView extends TextView implements Runnable{
 
     public static final String TAG = "MarqueeTextView";
 
@@ -77,7 +77,11 @@ public class MarqueeTextView extends TextView {
      * @param count 运行的次数，if(count < 0) count = Integer.MAX_VALUE;
      */
     public void startMarquee(int count){
+        if(mCurrentState != STATE_SCROLL_IDLE){
+            return;
+        }
         mTextLength = (int) getPaint().measureText(getText().toString());
+        mViewWidth = getMeasuredWidth();
         if(mTextLength > mViewWidth){
             mTextLengthDuration = (mTextLength / 100 + 1) * mUnitDuration;
             if(count < 0) count = Integer.MAX_VALUE;
@@ -85,7 +89,7 @@ public class MarqueeTextView extends TextView {
             mAlreadyCount = 0;
             performMarqueeOut();
         }else{
-            Log.w(TAG,"文字长度小于视图宽度，拒绝运行跑马灯");
+            Log.i(TAG,"文字长度小于视图宽度，拒绝运行跑马灯");
         }
     }
 
@@ -117,7 +121,7 @@ public class MarqueeTextView extends TextView {
                         Log.i(TAG, "computeScroll,computeScrollOffset = false,mCurrentState = " + mCurrentState + ",mAlreadyCount = " + mAlreadyCount);
                     }
                     //作稍许停顿
-                    postDelayed(mMarqueeOutRunnable,mHaltTime);
+                    postDelayed(this,mHaltTime);
                 }else{
                     if(DEBUG) {
                         Log.i(TAG, "computeScroll,computeScrollOffset = false,reset()");
@@ -169,13 +173,10 @@ public class MarqueeTextView extends TextView {
         }
         mAlreadyCount = 0;
     }
-
-    private Runnable mMarqueeOutRunnable = new Runnable() {
-        @Override
-        public void run() {
-            performMarqueeOut();
-        }
-    };
+    @Override
+    public void run() {
+        performMarqueeOut();
+    }
 
     private void performMarqueeOut(){
         mScroller.startScroll(getScrollX(),getScrollY(),mTextLength,getScrollY(),mTextLengthDuration);
@@ -212,12 +213,14 @@ public class MarqueeTextView extends TextView {
         mInitScrollX = getScrollX();
     }
 
+
+
     public interface OnMarqueeListener{
         /**
          * 跑马灯状态变化
          * @param marqueeTextView 跑马灯对象
          * @param state 跑马灯状态
          */
-        void onStateChange(MarqueeTextView marqueeTextView,int state);
+        void onStateChange(MarqueeTextView marqueeTextView, int state);
     }
 }
